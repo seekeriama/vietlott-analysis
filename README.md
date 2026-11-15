@@ -6,3 +6,4 @@ Trang phân tích kết quả Vietlott Power 6/55 và Mega 6/45 (một file `ind
 - `data/draws`, `data/draws645`: các kỳ quay được tự động ghi thêm vào cơ sở dữ liệu của trang (nguồn xskt.com.vn).
 
 Lưu ý: kết quả cho thấy chọn số theo lịch sử không tăng cơ hội trúng.
+Truy cập: https://seekeriama.github.io/vietlott-analysis/ để sử dụng
