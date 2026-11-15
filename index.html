@@ -947,7 +947,20 @@ function toDraw(s){
 (async()=>{
   let db=null;
   try{db=window.claude&&await window.claude.use('db');}catch(e){db=null;}
-  if(!db){stale=true;syncText();return;}
+  if(!db){
+    /* Bản GitHub: đọc data/vietlott.json do GitHub Actions cập nhật mỗi ngày. */
+    try{
+      const r=await fetch('data/vietlott.json',{cache:'no-store'});if(!r.ok)throw new Error(r.status);
+      const j=await r.json();
+      Object.values(GAMES).forEach(g=>{
+        const keep=G;setGame(g.id);
+        remoteBy[g.id]=(j[g.id]||[]).map(o=>toDraw({data:()=>o})).filter(Boolean);
+        metaBy[g.id]=(j.meta&&j.meta[g.id])||null;setGame(keep.id);
+      });
+      rebuild();compute();syncText();
+    }catch(e){stale=true;syncText();}
+    return;
+  }
   timer=setTimeout(()=>{stale=true;syncText();},10000);
   const done=()=>{if(timer){clearTimeout(timer);timer=null;}stale=false;};
   Object.values(GAMES).forEach(g=>{

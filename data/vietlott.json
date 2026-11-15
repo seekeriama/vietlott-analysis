@@ -1,0 +1,47 @@
+{
+ "655": [
+  {
+   "bonus": 51,
+   "date": "14-11-2026",
+   "draw": 1424,
+   "fetchedAt": "2026-11-14T14:27:42Z",
+   "nums": [
+    5,
+    28,
+    36,
+    42,
+    45,
+    47
+   ],
+   "source": "xskt.com.vn"
+  }
+ ],
+ "645": [
+  {
+   "date": "15-11-2026",
+   "draw": 1589,
+   "fetchedAt": "2026-11-15T12:49:09Z",
+   "nums": [
+    6,
+    22,
+    24,
+    26,
+    40,
+    44
+   ],
+   "source": "xskt.com.vn"
+  }
+ ],
+ "meta": {
+  "655": {
+   "lastRun": "2026-11-15T12:49:09Z",
+   "result": "ok",
+   "message": "Dữ liệu khởi tạo"
+  },
+  "645": {
+   "lastRun": "2026-11-15T12:49:09Z",
+   "result": "ok",
+   "message": "Dữ liệu khởi tạo"
+  }
+ }
+}
