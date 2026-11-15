@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phân tích Vietlott</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: thanh tab phía trên, một cột nội dung tối đa 1040px, thẻ số liệu rồi tới chi tiết */
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#18212f; --muted:#5d6a7e; --line:#d9dfe8;
+  --accent:#2747c7; --accent-soft:#e3e9fb; --band:#c9d3ee;
+  --good:#16794a; --good-soft:#dff3e8; --warn:#a85d00; --warn-soft:#fbecd3;
+  --display:"Be Vietnam Pro",system-ui,"Segoe UI",Arial,sans-serif;
+  --body:"Be Vietnam Pro",system-ui,"Segoe UI",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151d; --surface:#19212c; --ink:#e7ecf3; --muted:#98a5b8; --line:#2c3748;
+    --accent:#8ea6ff; --accent-soft:#232f52; --band:#2f3d66;
+    --good:#5fd09a; --good-soft:#173527; --warn:#f0b35a; --warn-soft:#3d2c12; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151d; --surface:#19212c; --ink:#e7ecf3; --muted:#98a5b8; --line:#2c3748;
+  --accent:#8ea6ff; --accent-soft:#232f52; --band:#2f3d66;
+  --good:#5fd09a; --good-soft:#173527; --warn:#f0b35a; --warn-soft:#3d2c12; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--body)}
+.wrap{max-width:1040px;margin:0 auto;padding:20px 16px 56px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}
+h1{font:700 26px/1.2 var(--display);margin:0;text-wrap:balance}
+h2{font:600 18px/1.3 var(--display);margin:0 0 4px;text-wrap:balance}
+p{margin:0;max-width:68ch}
+.sub{color:var(--muted);font-size:14px}
+select,input,textarea,button{font:inherit;color:inherit}
+select,input[type=date],textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{width:100%;min-height:110px;font:400 13px/1.5 var(--mono)}
+button{cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:8px;padding:8px 14px;font-weight:600}
+button.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+nav{display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--line);padding-bottom:0}
+nav a{white-space:nowrap;text-decoration:none;color:var(--muted);padding:9px 12px;border-bottom:3px solid transparent;font-weight:500}
+nav a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+section{display:none;flex-direction:column;gap:16px}
+section.on{display:flex}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.tile b{font:600 24px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.tile span{color:var(--muted);font-size:13px}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;font-weight:600;max-width:100%}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.note{border-left:4px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 8px 8px 0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);font-size:13px}
+th[data-k]{cursor:pointer;text-decoration:underline dotted}
+td.l,th.l{text-align:left}
+.num{font-family:var(--mono)}
+.balls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ball{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:600 14px var(--mono);background:var(--accent-soft);color:var(--accent);border:1px solid var(--band)}
+.ball.bonus{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.ball.hit{background:var(--accent);color:var(--surface)}
+.grid55{display:grid;grid-template-columns:repeat(var(--cols,11),minmax(0,1fr));gap:5px;max-width:520px}
+.seg{display:inline-flex;border:1px solid var(--accent);border-radius:9px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent;color:var(--accent);padding:7px 14px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.hctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid55 button{padding:0;aspect-ratio:1;border-radius:50%;background:var(--surface);color:var(--ink);border:1px solid var(--line);font:600 13px var(--mono)}
+.grid55 button[aria-pressed="true"]{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.bar{height:8px;border-radius:4px;background:var(--accent);min-width:2px}
+svg text{fill:var(--muted);font:11px var(--mono)}
+.msg{font-size:14px}
+.msg.err{color:var(--warn)}
+@media (max-width:480px){h1{font-size:21px}.ball{width:30px;height:30px;font-size:13px}th,td{padding:6px 7px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1 id="title">Phân tích Power 6/55</h1>
+    <p class="sub" id="range"></p>
+    <p class="sub" id="sync"><span class="pill warn">Đang kết nối nguồn cập nhật…</span></p>
+  </div>
+  <div class="hctl">
+    <div class="seg" role="group" aria-label="Loại vé" id="gameSel">
+      <button type="button" data-game="655" aria-pressed="true">Power 6/55</button>
+      <button type="button" data-game="645" aria-pressed="false">Mega 6/45</button>
+    </div>
+    <label class="sub">Khoảng dữ liệu
+      <select id="period">
+        <option value="year">1 năm gần nhất</option>
+        <option value="100">100 kỳ gần nhất</option>
+        <option value="all">Tất cả dữ liệu</option>
+      </select>
+    </label>
+  </div>
+</header>
+
+<nav id="nav">
+  <a href="#tong-quan">Tổng quan</a>
+  <a href="#tung-so">Từng số</a>
+  <a href="#bo-so">Bộ 6 số</a>
+  <a href="#kiem-dinh">Kiểm định</a>
+  <a href="#chien-luoc">Thử chiến lược</a>
+  <a href="#do-ve">Dò vé</a>
+  <a href="#du-lieu">Dữ liệu</a>
+</nav>
+
+<section id="tong-quan">
+  <div class="tiles" id="tiles"></div>
+  <div class="card"><h2>Kỳ quay gần nhất</h2><div id="latest"></div></div>
+  <div class="card">
+    <h2>Xác suất trúng giải của một vé</h2>
+    <p class="sub">Tính bằng tổ hợp, đúng với mọi bộ 6 số. Lịch sử kết quả không làm thay đổi các con số này.</p>
+    <div class="scroll"><table id="odds"></table></div>
+  </div>
+  <p class="note">Mỗi kỳ quay độc lập với các kỳ trước. Công cụ này đo xem dữ liệu có lệch khỏi ngẫu nhiên hay không, và cho thấy các cách chọn số theo lịch sử không trúng nhiều hơn chọn ngẫu nhiên.</p>
+</section>
+
+<section id="tung-so">
+  <div class="card">
+    <h2>Số lần xuất hiện của <span class="gN">55</span> số</h2>
+    <p class="sub">Đường ngang là kỳ vọng lý thuyết. Dải mờ là vùng dao động 95% của quay ngẫu nhiên.</p>
+    <div class="scroll"><div id="chart" style="min-width:680px"></div></div>
+  </div>
+  <div class="card">
+    <h2>Xác suất ước lượng cho từng số</h2>
+    <p class="sub">Mô hình Bayes Beta-Binomial, tiên nghiệm tương đương 100 kỳ ngẫu nhiên. Lý thuyết: <span class="gP0">6/55 = 10,91%</span>. Bấm tiêu đề cột để sắp xếp.</p>
+    <div class="scroll"><table id="numtab"></table></div>
+  </div>
+</section>
+
+<section id="bo-so">
+  <p class="note">Nếu máy quay công bằng, mọi bộ 6 số đều có cùng xác suất 1 / <span class="gTotal">28.989.675</span>. Tab này giả sử lịch sử có thông tin, tìm các bộ số mô hình đánh giá cao nhất, rồi kiểm tra giả định đó trên các kỳ đã quay.</p>
+  <div class="tiles" id="ctiles"></div>
+  <div class="card">
+    <h2>10 bộ 6 số có xác suất cao nhất theo mô hình</h2>
+    <p class="sub">Mô hình: mỗi số mang trọng số theo xác suất Bayes của nó. Xác suất của một bộ bằng tích trọng số chia cho tổng trên toàn bộ <span class="gTotal">28.989.675</span> bộ, nên các xác suất cộng lại đúng bằng 1. Khi mọi số ra đều nhau, mô hình cho đúng 1 / <span class="gTotal">28.989.675</span>. Nhiều bộ có cùng xác suất vì các số trong đó ra cùng số lần.</p>
+    <div class="scroll"><table id="combos"></table></div>
+  </div>
+  <div class="card">
+    <h2>Mô hình có dự đoán được không?</h2>
+    <div id="cbt"></div>
+  </div>
+  <div class="card">
+    <h2>Cặp số hay ra cùng nhau</h2>
+    <p class="sub" id="pairinfo"></p>
+    <div class="scroll"><table id="pairs"></table></div>
+  </div>
+</section>
+
+<section id="kiem-dinh">
+  <div class="card">
+    <h2>Dữ liệu có ngẫu nhiên không?</h2>
+    <p class="sub">p lớn hơn 0,05 nghĩa là không có bằng chứng lệch khỏi ngẫu nhiên. Khi chạy nhiều kiểm định, thỉnh thoảng một p nhỏ vẫn xuất hiện do may rủi.</p>
+    <div class="scroll"><table id="tests"></table></div>
+  </div>
+</section>
+
+<section id="chien-luoc">
+  <div class="card">
+    <h2>Chọn số theo lịch sử có hơn ngẫu nhiên không?</h2>
+    <p class="sub" id="btinfo"></p>
+    <div class="scroll"><table id="bt"></table></div>
+  </div>
+</section>
+
+<section id="do-ve">
+  <div class="card">
+    <h2>Chọn 6 số</h2>
+    <div class="grid55" id="grid"></div>
+    <div class="row">
+      <button id="quick" type="button">Chọn ngẫu nhiên</button>
+      <button id="clear" type="button" class="ghost">Xóa</button>
+      <span class="sub" id="picked"></span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Bộ số này trong các kỳ đã quay</h2>
+    <div id="check"><p class="sub">Chọn đủ 6 số để xem kết quả.</p></div>
+  </div>
+</section>
+
+<section id="du-lieu">
+  <div class="card">
+    <h2>Thêm kỳ quay mới</h2>
+    <p class="sub">Kết quả mới được tự động tải từ xskt.com.vn sau mỗi kỳ quay (khoảng 19:45 tối <span id="gDays">Thứ 3, 5, 7</span>). Chỉ cần dán tay khi muốn thêm ngay. Mỗi dòng một kỳ: <span id="gFmt">ngày, số kỳ, 6 số, số JP2</span>. Ví dụ: <span class="num" id="gEx">14-11-2026,1424,03,11,25,37,42,50,18</span>. Các kỳ bạn thêm chỉ lưu trong trình duyệt này.</p>
+    <textarea id="paste" placeholder="14-11-2026,1424,03,11,25,37,42,50,18"></textarea>
+    <div class="row">
+      <button id="add" type="button">Thêm vào dữ liệu</button>
+      <button id="reset" type="button" class="ghost">Xóa các kỳ đã thêm</button>
+      <button id="copy" type="button" class="ghost">Sao chép toàn bộ CSV</button>
+    </div>
+    <p class="msg" id="msg" role="status"></p>
+  </div>
+  <div class="card">
+    <h2>Bảng kết quả</h2>
+    <p class="sub">Nguồn: <a id="gSrc" href="https://xskt.com.vn/xspower/200-ngay">xskt.com.vn</a>. Có sẵn kỳ <span id="gBase">#1224 đến #1423</span>; các kỳ sau được tải tự động. Cột Nguồn cho biết kỳ nào đến từ đâu.</p>
+    <div class="scroll" style="max-height:520px;overflow-y:auto"><table id="data"></table></div>
+  </div>
+</section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.6/jstat.min.js"></script>
+<script id="core">
+let N=55,K=6,BONUS=true;
+const RAW655=`1423 12-11-2026 17 25 33 34 35 36 48
+1422 10-11-2026 1 2 21 38 39 51 12
+1421 07-11-2026 5 19 20 26 44 53 39
+1420 05-11-2026 6 20 34 41 49 52 36
+1419 03-11-2026 10 22 31 39 43 54 14
+1418 31-10-2026 12 18 22 26 28 55 11
+1417 29-10-2026 9 29 33 38 45 46 53
+1416 27-10-2026 9 18 27 28 31 35 50
+1415 24-10-2026 6 7 18 41 44 50 53
+1414 22-10-2026 14 19 24 31 34 42 37
+1413 20-10-2026 13 20 23 30 50 55 45
+1412 17-10-2026 1 10 11 12 16 37 48
+1411 15-10-2026 7 23 25 42 45 51 4
+1410 13-10-2026 2 14 27 40 50 53 26
+1409 10-10-2026 14 17 21 23 24 39 30
+1408 08-10-2026 1 7 12 27 31 52 6
+1407 06-10-2026 6 7 18 20 24 27 1
+1406 03-10-2026 7 11 13 16 18 54 41
+1405 01-10-2026 4 5 13 34 52 55 15
+1404 29-09-2026 2 4 13 17 35 36 11
+1403 26-09-2026 14 18 21 38 48 52 49
+1402 24-09-2026 1 13 23 25 26 28 27
+1401 22-09-2026 1 3 9 11 41 46 10
+1400 19-09-2026 4 7 11 18 22 25 50
+1399 17-09-2026 6 11 25 27 37 45 15
+1398 15-09-2026 24 27 32 36 38 47 52
+1397 12-09-2026 7 24 31 43 47 54 22
+1396 10-09-2026 2 5 28 32 51 53 50
+1395 08-09-2026 8 11 14 23 25 54 17
+1394 05-09-2026 9 11 24 31 33 47 21
+1393 03-09-2026 8 9 16 42 46 47 11
+1392 01-09-2026 1 17 41 44 49 55 45
+1391 29-08-2026 5 10 15 29 34 45 24
+1390 27-08-2026 1 3 11 21 26 44 10
+1389 25-08-2026 5 7 13 18 31 40 14
+1388 22-08-2026 9 18 19 21 25 36 8
+1387 20-08-2026 2 8 29 38 39 51 47
+1386 18-08-2026 3 15 18 38 41 48 30
+1385 15-08-2026 16 20 25 27 30 50 2
+1384 13-08-2026 5 9 27 29 45 46 42
+1383 11-08-2026 2 7 19 20 39 50 31
+1382 08-08-2026 5 29 33 38 40 45 37
+1381 06-08-2026 14 18 23 35 51 55 1
+1380 04-08-2026 14 39 40 42 47 54 31
+1379 01-08-2026 11 14 16 44 49 55 39
+1378 30-07-2026 2 12 24 28 43 49 51
+1377 28-07-2026 7 22 23 27 41 44 48
+1376 25-07-2026 5 9 27 33 37 50 48
+1375 23-07-2026 1 3 8 38 40 55 36
+1374 21-07-2026 8 11 22 24 32 39 13
+1373 18-07-2026 22 41 45 48 54 55 16
+1372 16-07-2026 19 20 33 45 48 53 21
+1371 14-07-2026 10 24 30 35 45 51 33
+1370 11-07-2026 9 17 20 33 41 42 40
+1369 09-07-2026 2 9 10 14 17 49 45
+1368 07-07-2026 4 6 25 32 33 44 8
+1367 04-07-2026 13 15 18 23 31 43 41
+1366 02-07-2026 5 11 28 34 41 42 49
+1365 30-06-2026 5 13 18 22 43 44 47
+1364 27-06-2026 7 16 21 23 28 52 54
+1363 25-06-2026 1 3 8 15 35 55 23
+1362 23-06-2026 1 13 28 38 40 46 5
+1361 20-06-2026 16 23 26 30 52 53 46
+1360 18-06-2026 1 4 14 20 46 49 36
+1359 16-06-2026 2 4 5 7 31 40 14
+1358 13-06-2026 2 8 19 33 36 47 42
+1357 11-06-2026 1 8 17 24 40 48 46
+1356 09-06-2026 6 8 18 27 32 34 35
+1355 06-06-2026 3 11 16 37 39 41 28
+1354 04-06-2026 23 24 28 29 39 43 45
+1353 02-06-2026 1 3 5 16 37 51 42
+1352 30-05-2026 2 8 20 24 25 42 44
+1351 28-05-2026 8 11 21 25 31 53 54
+1350 26-05-2026 1 14 15 19 23 34 29
+1349 23-05-2026 17 21 22 27 38 49 3
+1348 21-05-2026 16 18 20 28 32 34 40
+1347 19-05-2026 12 39 40 45 48 53 21
+1346 16-05-2026 8 25 32 36 39 47 50
+1345 14-05-2026 26 28 39 41 48 55 50
+1344 12-05-2026 2 11 22 26 31 38 15
+1343 09-05-2026 3 10 32 37 45 55 46
+1342 07-05-2026 13 14 33 44 46 50 47
+1341 05-05-2026 4 6 8 17 30 50 32
+1340 02-05-2026 9 21 22 26 33 51 17
+1339 30-04-2026 9 15 21 25 29 50 16
+1338 28-04-2026 24 25 34 51 52 53 35
+1337 25-04-2026 4 7 10 29 41 46 43
+1336 23-04-2026 5 16 17 22 33 53 55
+1335 21-04-2026 8 30 36 39 50 53 15
+1334 18-04-2026 9 19 20 28 37 39 24
+1333 16-04-2026 2 7 15 22 47 52 55
+1332 14-04-2026 8 16 22 35 39 47 28
+1331 11-04-2026 13 26 29 38 49 53 7
+1330 09-04-2026 16 18 22 29 41 53 38
+1329 07-04-2026 1 13 23 31 44 53 32
+1328 04-04-2026 5 7 10 23 30 54 40
+1327 02-04-2026 9 21 32 34 52 53 22
+1326 31-03-2026 15 16 22 38 43 48 11
+1325 28-03-2026 7 13 21 30 33 42 39
+1324 26-03-2026 3 9 10 34 38 44 51
+1323 24-03-2026 12 19 25 26 32 45 3
+1322 21-03-2026 1 6 40 43 47 53 3
+1321 19-03-2026 7 9 17 31 34 36 55
+1320 17-03-2026 12 26 28 43 50 54 52
+1319 14-03-2026 7 16 27 29 47 52 26
+1318 12-03-2026 12 28 36 40 53 55 54
+1317 10-03-2026 3 26 31 39 47 54 20
+1316 07-03-2026 4 32 41 45 50 52 29
+1315 05-03-2026 14 16 35 38 43 51 37
+1314 03-03-2026 7 13 27 29 43 50 25
+1313 28-02-2026 22 25 31 44 51 54 36
+1312 26-02-2026 1 7 10 21 44 51 46
+1311 24-02-2026 5 8 18 30 39 54 51
+1310 21-02-2026 5 7 26 30 41 45 12
+1309 19-02-2026 1 27 30 43 45 46 48
+1308 14-02-2026 2 13 26 32 36 42 48
+1307 12-02-2026 8 17 19 31 32 46 26
+1306 10-02-2026 13 21 22 26 32 55 20
+1305 07-02-2026 3 5 13 15 29 46 1
+1304 05-02-2026 7 13 16 25 26 55 9
+1303 03-02-2026 12 15 18 22 48 53 45
+1302 31-01-2026 10 11 14 17 49 53 4
+1301 29-01-2026 11 15 22 32 34 54 28
+1300 27-01-2026 13 22 32 42 53 54 29
+1299 24-01-2026 14 24 25 30 35 53 18
+1298 22-01-2026 2 20 21 29 36 50 5
+1297 20-01-2026 4 20 26 28 37 41 32
+1296 17-01-2026 14 21 23 25 46 48 54
+1295 15-01-2026 13 21 31 34 48 55 27
+1294 13-01-2026 3 12 25 51 52 55 43
+1293 10-01-2026 9 16 30 33 34 38 49
+1292 08-01-2026 20 22 36 43 45 50 47
+1291 06-01-2026 22 28 29 30 34 47 20
+1290 03-01-2026 10 16 17 23 33 36 42
+1289 01-01-2026 5 16 29 33 39 42 54
+1288 30-12-2025 11 30 35 41 48 55 38
+1287 27-12-2025 16 21 30 37 39 40 13
+1286 25-12-2025 4 6 32 37 40 48 38
+1285 23-12-2025 2 10 16 25 32 38 3
+1284 20-12-2025 22 32 33 35 40 41 23
+1283 18-12-2025 12 14 29 30 39 55 50
+1282 16-12-2025 7 36 37 38 52 55 46
+1281 13-12-2025 5 8 12 18 20 38 52
+1280 11-12-2025 9 13 21 45 48 55 38
+1279 09-12-2025 14 21 26 27 31 43 42
+1278 06-12-2025 12 26 34 37 50 52 15
+1277 04-12-2025 10 29 32 33 44 53 14
+1276 02-12-2025 16 20 24 36 51 54 10
+1275 29-11-2025 4 20 24 27 40 48 9
+1274 27-11-2025 4 5 10 11 28 35 38
+1273 25-11-2025 23 31 32 42 46 48 4
+1272 22-11-2025 8 10 19 29 34 46 14
+1271 20-11-2025 3 12 19 20 31 42 13
+1270 18-11-2025 7 12 18 22 30 49 5
+1269 15-11-2025 2 30 33 35 42 54 45
+1268 13-11-2025 1 15 30 38 40 43 13
+1267 11-11-2025 11 20 28 41 47 54 31
+1266 08-11-2025 14 16 19 22 27 44 18
+1265 06-11-2025 16 20 29 33 36 49 6
+1264 04-11-2025 15 27 29 31 36 43 38
+1263 01-11-2025 7 11 28 29 31 33 8
+1262 30-10-2025 20 23 35 41 47 55 37
+1261 28-10-2025 6 8 10 22 25 54 9
+1260 25-10-2025 3 5 11 13 24 27 45
+1259 23-10-2025 8 10 21 48 49 50 40
+1258 21-10-2025 3 11 12 14 22 40 41
+1257 18-10-2025 5 16 19 21 38 43 50
+1256 16-10-2025 14 15 24 26 27 45 36
+1255 14-10-2025 8 9 16 26 37 55 12
+1254 11-10-2025 3 7 26 43 44 46 25
+1253 09-10-2025 7 11 21 22 39 42 40
+1252 07-10-2025 19 22 35 37 43 45 29
+1251 04-10-2025 22 33 35 36 38 40 7
+1250 02-10-2025 1 2 20 24 27 42 43
+1249 30-09-2025 17 23 34 39 46 52 8
+1248 27-09-2025 8 13 19 24 39 46 1
+1247 25-09-2025 5 17 30 31 38 53 8
+1246 23-09-2025 8 18 19 34 41 46 38
+1245 20-09-2025 8 13 14 19 36 43 30
+1244 18-09-2025 2 3 8 27 38 55 20
+1243 16-09-2025 17 19 28 39 43 53 33
+1242 13-09-2025 2 7 15 18 24 27 45
+1241 11-09-2025 6 16 46 49 51 55 42
+1240 09-09-2025 16 20 21 31 40 52 2
+1239 06-09-2025 9 11 19 22 34 43 31
+1238 04-09-2025 9 19 23 42 49 53 40
+1237 02-09-2025 9 16 22 25 30 51 43
+1236 30-08-2025 2 17 19 24 30 44 34
+1235 28-08-2025 6 13 28 30 35 52 50
+1234 26-08-2025 22 30 38 44 48 55 5
+1233 23-08-2025 1 9 26 34 44 50 52
+1232 21-08-2025 5 9 17 35 40 41 44
+1231 19-08-2025 1 14 31 34 36 47 45
+1230 16-08-2025 14 23 32 36 47 48 5
+1229 14-08-2025 6 10 17 18 32 35 53
+1228 12-08-2025 1 6 24 37 40 55 10
+1227 09-08-2025 5 9 16 36 43 51 19
+1226 07-08-2025 6 24 31 32 39 48 52
+1225 05-08-2025 8 41 45 51 52 53 31
+1224 02-08-2025 12 24 29 33 34 35 47`;
+const RAW645=`1588 13-11-2026 1 7 15 19 31 33
+1587 11-11-2026 3 11 14 23 25 43
+1586 08-11-2026 1 2 14 20 23 36
+1585 06-11-2026 1 10 37 38 39 45
+1584 04-11-2026 7 14 20 30 34 40
+1583 01-11-2026 5 9 17 18 34 36
+1582 30-10-2026 7 21 22 40 41 45
+1581 28-10-2026 1 9 11 28 33 42
+1580 25-10-2026 4 13 22 25 40 41
+1579 23-10-2026 2 5 11 22 32 40
+1578 21-10-2026 4 10 14 22 25 44
+1577 18-10-2026 10 11 31 38 40 44
+1576 16-10-2026 9 20 26 35 36 38
+1575 14-10-2026 6 16 19 21 34 43
+1574 11-10-2026 3 9 16 29 30 44
+1573 09-10-2026 5 7 12 23 32 41
+1572 07-10-2026 10 14 36 37 41 43
+1571 04-10-2026 15 20 29 37 40 45
+1570 02-10-2026 1 6 20 27 31 41
+1569 30-09-2026 2 9 24 27 30 33
+1568 27-09-2026 2 4 13 25 31 39
+1567 25-09-2026 3 15 18 28 33 36
+1566 23-09-2026 2 6 12 15 25 26
+1565 20-09-2026 10 15 16 27 33 38
+1564 18-09-2026 7 12 26 27 41 43
+1563 16-09-2026 1 3 10 11 18 23
+1562 13-09-2026 4 12 31 34 38 41
+1561 11-09-2026 14 18 20 21 26 27
+1560 09-09-2026 12 17 20 21 36 43
+1559 06-09-2026 9 14 22 26 27 40
+1558 04-09-2026 16 21 23 29 34 45
+1557 02-09-2026 6 9 27 29 35 44
+1556 30-08-2026 1 3 12 15 37 45
+1555 28-08-2026 3 13 15 22 36 39
+1554 26-08-2026 3 10 11 16 33 40
+1553 23-08-2026 4 16 17 22 32 39
+1552 21-08-2026 7 26 31 38 43 45
+1551 19-08-2026 6 15 18 33 40 43
+1550 16-08-2026 6 7 15 19 36 41
+1549 14-08-2026 7 9 13 31 35 44
+1548 12-08-2026 15 17 22 29 33 40
+1547 09-08-2026 3 17 20 27 31 35
+1546 07-08-2026 2 8 19 30 36 43
+1545 05-08-2026 2 6 11 16 28 39
+1544 02-08-2026 3 12 20 25 27 37
+1543 31-07-2026 6 16 24 25 38 43
+1542 29-07-2026 2 6 21 31 36 45
+1541 26-07-2026 13 16 27 33 41 44
+1540 24-07-2026 12 16 36 38 41 45
+1539 22-07-2026 3 32 33 34 39 43
+1538 19-07-2026 12 22 24 26 31 37
+1537 17-07-2026 9 18 30 31 39 45
+1536 15-07-2026 7 11 29 37 43 45
+1535 12-07-2026 6 9 11 17 35 44
+1534 10-07-2026 9 17 23 26 42 44
+1533 08-07-2026 13 14 22 26 37 44
+1532 05-07-2026 1 5 13 29 32 35
+1531 03-07-2026 6 20 21 28 30 39
+1530 01-07-2026 20 24 25 29 40 44
+1529 28-06-2026 2 11 18 33 42 45
+1528 26-06-2026 9 14 31 36 41 45
+1527 24-06-2026 3 11 17 19 30 32
+1526 21-06-2026 3 8 19 27 41 45
+1525 19-06-2026 6 9 19 29 30 36
+1524 17-06-2026 5 6 16 28 35 39
+1523 14-06-2026 7 16 20 22 24 38
+1522 12-06-2026 5 15 30 34 37 38
+1521 10-06-2026 3 9 17 22 27 32
+1520 07-06-2026 14 21 26 30 34 35
+1519 05-06-2026 13 16 19 32 36 39
+1518 03-06-2026 3 11 26 33 36 38
+1517 31-05-2026 1 12 16 21 24 41
+1516 29-05-2026 13 14 24 28 30 42
+1515 27-05-2026 2 13 17 18 31 37
+1514 24-05-2026 4 8 9 14 25 42
+1513 22-05-2026 2 3 14 28 41 44
+1512 20-05-2026 16 28 29 37 40 45
+1511 17-05-2026 4 8 13 15 27 31
+1510 15-05-2026 6 14 20 22 23 44
+1509 13-05-2026 8 10 15 32 35 43
+1508 10-05-2026 3 4 10 11 27 42
+1507 08-05-2026 4 16 17 26 34 42
+1506 06-05-2026 9 12 28 36 37 40
+1505 03-05-2026 7 9 14 24 38 39
+1504 01-05-2026 4 21 25 31 41 43
+1503 29-04-2026 4 14 15 16 17 25
+1502 26-04-2026 12 18 22 25 31 41
+1501 24-04-2026 20 29 33 36 41 42
+1500 22-04-2026 2 6 15 16 17 37
+1499 19-04-2026 7 10 15 27 33 35
+1498 17-04-2026 1 10 19 31 36 38
+1497 15-04-2026 21 22 33 35 36 43
+1496 12-04-2026 1 10 11 32 39 42
+1495 10-04-2026 7 8 10 16 28 35
+1494 08-04-2026 5 8 23 26 38 41
+1493 05-04-2026 2 9 23 30 32 42
+1492 03-04-2026 2 4 23 24 35 41
+1491 01-04-2026 6 30 34 36 37 44
+1490 29-03-2026 5 8 18 30 37 45
+1489 27-03-2026 5 7 13 19 38 45
+1488 25-03-2026 16 22 24 29 35 36
+1487 22-03-2026 5 10 22 26 31 36
+1486 20-03-2026 8 11 22 23 38 43
+1485 18-03-2026 14 20 33 35 36 44
+1484 15-03-2026 4 7 11 26 42 44
+1483 13-03-2026 11 12 20 22 31 33
+1482 11-03-2026 16 18 19 28 31 44
+1481 08-03-2026 6 12 13 25 31 32
+1480 06-03-2026 2 10 12 21 32 37
+1479 04-03-2026 1 4 6 9 13 44
+1478 01-03-2026 16 22 23 35 44 45
+1477 27-02-2026 2 4 8 15 17 28
+1476 25-02-2026 4 13 20 22 23 29
+1475 22-02-2026 7 23 24 36 38 40
+1474 20-02-2026 4 25 28 33 34 45
+1473 18-02-2026 1 7 19 23 26 44
+1472 15-02-2026 4 6 7 20 28 43
+1471 13-02-2026 8 12 31 36 42 43
+1470 11-02-2026 15 20 35 40 44 45
+1469 08-02-2026 6 13 16 20 23 38
+1468 06-02-2026 2 7 13 17 42 45
+1467 04-02-2026 2 12 14 17 39 43
+1466 01-02-2026 1 18 21 23 30 36
+1465 30-01-2026 16 17 30 41 42 45
+1464 28-01-2026 4 10 16 19 27 40
+1463 25-01-2026 2 19 20 24 33 34
+1462 23-01-2026 9 15 16 20 22 31
+1461 21-01-2026 1 18 23 24 29 37
+1460 18-01-2026 2 5 15 26 39 42
+1459 16-01-2026 2 10 21 31 34 40
+1458 14-01-2026 1 22 23 28 39 45
+1457 11-01-2026 8 10 21 25 31 38
+1456 09-01-2026 8 9 17 21 36 45
+1455 07-01-2026 1 5 7 28 31 43
+1454 04-01-2026 2 12 21 29 35 44
+1453 02-01-2026 7 18 22 32 37 38
+1452 31-12-2025 1 25 35 36 37 45
+1451 28-12-2025 1 2 7 16 31 37
+1450 26-12-2025 4 6 16 25 27 40
+1449 24-12-2025 15 19 31 35 43 45
+1448 21-12-2025 6 9 12 18 29 43
+1447 19-12-2025 1 21 36 42 43 44
+1446 17-12-2025 5 14 24 38 41 43
+1445 14-12-2025 8 11 13 16 28 32
+1444 12-12-2025 3 7 13 17 38 44
+1443 10-12-2025 7 18 22 29 30 36
+1442 07-12-2025 1 5 23 28 29 43
+1441 05-12-2025 2 19 23 37 42 43
+1440 03-12-2025 8 15 20 23 31 34
+1439 30-11-2025 7 13 26 30 34 42
+1438 28-11-2025 2 9 17 23 39 41
+1437 26-11-2025 2 8 15 19 30 38
+1436 23-11-2025 4 12 19 42 43 44
+1435 21-11-2025 8 11 18 25 28 35
+1434 19-11-2025 9 12 19 30 40 43
+1433 16-11-2025 15 20 31 33 34 45
+1432 14-11-2025 3 10 15 27 41 42
+1431 12-11-2025 16 24 29 37 40 44
+1430 09-11-2025 13 23 27 30 37 43
+1429 07-11-2025 3 4 20 28 39 42
+1428 05-11-2025 2 9 18 25 30 31
+1427 02-11-2025 3 7 12 20 30 44
+1426 31-10-2025 3 10 31 34 36 43
+1425 29-10-2025 7 26 35 39 41 42
+1424 26-10-2025 18 30 34 42 43 45
+1423 24-10-2025 2 11 24 31 32 38
+1422 22-10-2025 5 11 12 24 28 44
+1421 19-10-2025 16 17 25 26 28 37
+1420 17-10-2025 15 17 18 26 31 42
+1419 15-10-2025 1 6 18 20 29 40
+1418 12-10-2025 4 10 16 20 28 34
+1417 10-10-2025 4 5 25 34 39 43
+1416 08-10-2025 8 10 11 18 23 32
+1415 05-10-2025 5 14 22 28 32 39
+1414 03-10-2025 29 31 32 33 34 35
+1413 01-10-2025 3 6 7 19 30 35
+1412 28-09-2025 8 13 18 26 36 39
+1411 26-09-2025 12 17 19 27 28 36
+1410 24-09-2025 3 5 17 31 32 40
+1409 21-09-2025 2 3 6 21 28 38
+1408 19-09-2025 4 6 17 18 28 41
+1407 17-09-2025 11 23 25 35 38 45
+1406 14-09-2025 3 6 9 10 30 37
+1405 12-09-2025 17 22 24 37 42 43
+1404 10-09-2025 7 10 18 20 24 36
+1403 07-09-2025 6 29 30 39 42 44
+1402 05-09-2025 1 10 20 22 41 43
+1401 03-09-2025 14 21 23 28 44 45
+1400 31-08-2025 3 4 14 30 32 38
+1399 29-08-2025 2 4 10 24 35 36
+1398 27-08-2025 3 11 18 39 40 42
+1397 24-08-2025 2 9 20 28 32 43
+1396 22-08-2025 1 9 10 13 37 39
+1395 20-08-2025 4 9 27 32 38 42
+1394 17-08-2025 15 24 26 29 31 42
+1393 15-08-2025 5 22 27 36 43 45
+1392 13-08-2025 10 15 28 30 35 45
+1391 10-08-2025 13 21 26 28 31 35
+1390 08-08-2025 11 17 20 26 27 38
+1389 06-08-2025 3 12 14 18 29 34`;
+
+function mkDraw(draw,date,nums,bonus){
+  const [d,m,y]=date.split('-').map(Number);
+  return {draw,date,ts:Date.UTC(y,m-1,d),nums:nums.slice().sort((a,b)=>a-b),bonus};
+}
+function validDraw(d){
+  if(!(d.draw>0)||isNaN(d.ts)) return 'ngày hoặc số kỳ không hợp lệ';
+  if(d.nums.length!==K||new Set(d.nums).size!==K) return 'cần đúng 6 số khác nhau';
+  if((BONUS?d.nums.concat(d.bonus):d.nums).some(n=>!(n>=1&&n<=N))) return 'các số phải từ 1 đến '+N;
+  if(BONUS&&d.nums.includes(d.bonus)) return 'số JP2 trùng với một số chính';
+  return '';
+}
+function parseLine(line){
+  const m=line.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  if(!m) return {err:'thiếu ngày dạng dd-mm-yyyy'};
+  const ints=(line.replace(m[0],' ').match(/\d+/g)||[]).map(Number);
+  if(ints.length!==(BONUS?8:7)) return {err:BONUS?'cần số kỳ, 6 số và số JP2 (8 số sau ngày)':'cần số kỳ và 6 số (7 số sau ngày)'};
+  const date=[m[1].padStart(2,'0'),m[2].padStart(2,'0'),m[3]].join('-');
+  const d=mkDraw(ints[0],date,ints.slice(1,7),BONUS?ints[7]:undefined);
+  const e=validDraw(d); return e?{err:e}:{d};
+}
+function parseRaw(raw,b){return raw.trim().split('\n').map(l=>{const p=l.split(' ');return mkDraw(+p[0],p[1],p.slice(2,8).map(Number),b?+p[8]:undefined);});}
+
+function rng32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+function comb(n,k){let r=1;for(let i=1;i<=k;i++)r=r*(n-k+i)/i;return Math.round(r);}
+function phi(z){const t=1/(1+0.2316419*Math.abs(z)),d=0.3989423*Math.exp(-z*z/2);
+  const p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p;}
+function meanTest(xs,mu){const n=xs.length,m=xs.reduce((a,b)=>a+b,0)/n;
+  const sd=Math.sqrt(xs.reduce((a,b)=>a+(b-m)*(b-m),0)/(n-1));const z=(m-mu)/(sd/Math.sqrt(n));
+  return {mean:m,mu,p:2*(1-phi(Math.abs(z)))};}
+/* Hai loại vé. Số cách trúng mỗi giải tính bằng tổ hợp: chọn đúng m trong 6 số trúng và 6-m trong các số còn lại. */
+const GAMES={
+  '655':{id:'655',name:'Power 6/55',N:55,bonus:true,raw:RAW655,days:'Thứ 3, 5, 7',
+    src:'https://xskt.com.vn/xspower/200-ngay',coll:'draws',meta:'meta/status',key:'power655-added',
+    example:'14-11-2026,1424,03,11,25,37,42,50,18',fmt:'ngày, số kỳ, 6 số, số JP2',
+    prizes:()=>[['Jackpot 1','Trùng 6 số',1],['Jackpot 2','Trùng 5 số và số JP2',comb(6,5)],['Giải Nhất','Trùng 5 số',comb(6,5)*48],
+      ['Giải Nhì','Trùng 4 số',comb(6,4)*comb(49,2)],['Giải Ba','Trùng 3 số',comb(6,3)*comb(49,3)]]},
+  '645':{id:'645',name:'Mega 6/45',N:45,bonus:false,raw:RAW645,days:'Thứ 4, 6, Chủ nhật',
+    src:'https://xskt.com.vn/xsmega645/200-ngay',coll:'draws645',meta:'meta/status645',key:'mega645-added',
+    example:'15-11-2026,1589,04,12,19,27,33,41',fmt:'ngày, số kỳ, 6 số',
+    prizes:()=>[['Jackpot','Trùng 6 số',1],['Giải Nhất','Trùng 5 số',comb(6,5)*comb(39,1)],
+      ['Giải Nhì','Trùng 4 số',comb(6,4)*comb(39,2)],['Giải Ba','Trùng 3 số',comb(6,3)*comb(39,3)]]}
+};
+let G,BASE,TOTAL,PRIZES,P_ANY;
+function setGame(id){G=GAMES[id]||GAMES['655'];N=G.N;BONUS=G.bonus;
+  if(!G.base)G.base=parseRaw(G.raw,G.bonus);BASE=G.base;
+  TOTAL=comb(N,K);PRIZES=G.prizes();P_ANY=PRIZES.reduce((a,p)=>a+p[2],0)/TOTAL;}
+setGame('655');
+
+function analyze(draws){
+  const T=draws.length,p0=K/N,cnt=Array(N).fill(0),last=Array(N).fill(-1),bc=Array(N).fill(0);
+  draws.forEach((d,t)=>{d.nums.forEach(n=>{cnt[n-1]++;last[n-1]=t;});if(BONUS)bc[d.bonus-1]++;});
+  const S=100,rows=cnt.map((c,i)=>{const a=c+S*p0,b=T-c+S*(1-p0);
+    return {n:i+1,c,freq:c/T,a,b,post:a/(a+b),gap:last[i]<0?T:T-1-last[i]};});
+  const E=T*p0,chi=c=>c.reduce((s,x)=>s+(x-E)*(x-E)/E,0),chiObs=chi(cnt);
+  const r=rng32(655),perm=Array.from({length:N},(_,i)=>i),SIM=2000;
+  let ge=0,geMax=0,leMin=0;const mx=Math.max(...cnt),mn=Math.min(...cnt);
+  for(let s=0;s<SIM;s++){const c=Array(N).fill(0);
+    for(let t=0;t<T;t++)for(let j=0;j<K;j++){const k=j+Math.floor(r()*(N-j));const x=perm[k];perm[k]=perm[j];perm[j]=x;c[x]++;}
+    if(chi(c)>=chiObs)ge++;if(Math.max(...c)>=mx)geMax++;if(Math.min(...c)<=mn)leMin++;}
+  const rep=[];for(let t=1;t<T;t++)rep.push(draws[t].nums.filter(n=>draws[t-1].nums.includes(n)).length);
+  const tests=[
+    {name:N+' số xuất hiện đều nhau',obs:'χ² = '+chiObs.toFixed(1),exp:'khoảng '+(N-1),p:ge/SIM},
+    {name:'Số ra nhiều nhất',obs:mx+' lần',exp:E.toFixed(1)+' lần',p:geMax/SIM},
+    {name:'Số ra ít nhất',obs:mn+' lần',exp:E.toFixed(1)+' lần',p:leMin/SIM},
+  ];
+  const add=(name,t,dp)=>tests.push({name,obs:t.mean.toFixed(dp),exp:t.mu.toFixed(dp),p:t.p});
+  if(T>2){add('Số lặp lại từ kỳ trước (trung bình)',meanTest(rep,K*K/N),3);
+    add('Tổng 6 số (trung bình)',meanTest(draws.map(d=>d.nums.reduce((a,b)=>a+b,0)),K*(N+1)/2),1);
+    add('Số lẻ trong mỗi kỳ (trung bình)',meanTest(draws.map(d=>d.nums.filter(n=>n%2).length),K*Math.ceil(N/2)/N),2);
+    const H=Math.floor(N/2);add('Số nhỏ (1 đến '+H+') trong mỗi kỳ',meanTest(draws.map(d=>d.nums.filter(n=>n<=H).length),K*H/N),2);}
+  return {T,p0,E,cnt,rows,tests,pUniform:ge/SIM};
+}
+
+function backtest(draws){
+  const T=draws.length,START=Math.min(50,Math.floor(T/2)),r=rng32(655);
+  const X=draws.map(d=>{const v=new Uint8Array(N);d.nums.forEach(n=>v[n-1]=1);return v;});
+  const pick=score=>score.map((s,i)=>[s+r()*1e-6,i]).sort((a,b)=>b[0]-a[0]).slice(0,K).map(x=>x[1]);
+  const names=['Số nóng (ra nhiều nhất từ trước tới giờ)','Số lạnh (ra ít nhất)','Số nóng trong 30 kỳ gần nhất',
+    'Số lâu chưa ra','Tần suất ưu tiên các kỳ gần','Lặp lại bộ số kỳ trước','Chọn ngẫu nhiên'];
+  const hits=names.map(()=>[]);
+  const c=new Float64Array(N),gap=new Float64Array(N).fill(1e6),ew=new Float64Array(N);
+  for(let t=0;t<T;t++){
+    if(t>=START){
+      const c30=new Float64Array(N);for(let u=Math.max(0,t-30);u<t;u++)for(let i=0;i<N;i++)c30[i]+=X[u][i];
+      const rnd=Array.from({length:N},()=>r());
+      const sel=[pick(Array.from(c)),pick(Array.from(c,x=>-x)),pick(Array.from(c30)),pick(Array.from(gap)),
+        pick(Array.from(ew)),pick(Array.from(X[t-1])),pick(rnd)];
+      sel.forEach((s,k)=>hits[k].push(s.reduce((a,i)=>a+X[t][i],0)));
+    }
+    for(let i=0;i<N;i++){c[i]+=X[t][i];ew[i]=ew[i]*0.97+X[t][i];gap[i]=X[t][i]?0:gap[i]+1;}
+  }
+  const n=T-START,mu=K*K/N,sd=Math.sqrt(K*(K/N)*(1-K/N)*(N-K)/(N-1)),se=sd/Math.sqrt(n);
+  return {n,mu,lo:mu-1.96*se,hi:mu+1.96*se,expWin:n*P_ANY,
+    rows:names.map((name,k)=>{const h=hits[k],m=h.reduce((a,b)=>a+b,0)/n;
+      return {name,mean:m,win:h.filter(x=>x>=3).length,max:Math.max(...h),z:(m-mu)/se};})};
+}
+function checkTicket(draws,pick){
+  const dist=Array(K+1).fill(0),wins=[];
+  draws.forEach(d=>{const m=d.nums.filter(n=>pick.includes(n)).length,b=pick.includes(d.bonus);dist[m]++;
+    if(m>=3)wins.push({d,m,prize:m===6?PRIZES[0][0]:m===5&&b&&BONUS?'Jackpot 2':m===5?'Giải Nhất':m===4?'Giải Nhì':'Giải Ba'});});
+  return {dist,wins};
+}
+
+/* ---- Mô hình bộ 6 số: conditional Bernoulli. P(S) = Π w_i / e6(w), w_i = p_i/(1-p_i), p_i = xác suất Bayes của số i.
+   Khi mọi p_i bằng nhau, mô hình trùng đúng với quay ngẫu nhiên 1/C(55,6). */
+function weights(draws,S=100){const T=draws.length,p0=K/N,c=Array(N).fill(0);
+  draws.forEach(d=>d.nums.forEach(n=>c[n-1]++));return c.map(x=>{const p=(x+S*p0)/(T+S);return p/(1-p);});}
+function e6(w){const e=[1,0,0,0,0,0,0];for(const x of w)for(let k=K;k>=1;k--)e[k]+=e[k-1]*x;return e[K];}
+function setProb(w,E,nums){return nums.reduce((s,n)=>s*w[n-1],1)/E;}
+function comboModel(draws){
+  const w=weights(draws),E=e6(w),ord=w.map((x,i)=>[x,i]).sort((a,b)=>b[0]-a[0]||a[1]-b[1]).map(x=>x[1]);
+  const pool=ord.slice(0,16),res=[];
+  (function rec(st,cur,prod){if(cur.length===K){res.push({nums:cur.map(i=>i+1).sort((a,b)=>a-b),p:prod/E});return;}
+    for(let j=st;j<pool.length;j++){cur.push(pool[j]);rec(j+1,cur,prod*w[pool[j]]);cur.pop();}})(0,[],1);
+  res.sort((a,b)=>b.p-a.p);
+  const lowNums=ord.slice(-K).map(i=>i+1).sort((a,b)=>a-b);
+  return {w,E,top:res.slice(0,10),low:{nums:lowNums,p:setProb(w,E,lowNums)}};
+}
+function comboBacktest(draws){
+  /* Mỗi kỳ t: dựng mô hình từ các kỳ trước, đo log(P_mô hình(kết quả thật) / P_ngẫu nhiên).
+     Mô hình học theo nhiễu nên trung bình luôn hơi âm kể cả khi máy quay công bằng,
+     vì vậy so với phân bố của cùng đại lượng trên dữ liệu quay ngẫu nhiên giả lập. */
+  const T=draws.length,START=Math.min(50,Math.floor(T/2)),lu=Math.log(TOTAL),S=100,p0=K/N;
+  const run=seq=>{const c=new Float64Array(N);let tot=0,n=0;
+    for(let t=0;t<T;t++){
+      if(t>=START){const w=new Float64Array(N);for(let i=0;i<N;i++){const p=(c[i]+S*p0)/(t+S);w[i]=p/(1-p);}
+        let lw=0;for(const x of seq[t])lw+=Math.log(w[x]);tot+=lw-Math.log(e6(w))+lu;n++;}
+      for(const x of seq[t])c[x]++;}
+    return tot/n;};
+  const obs=run(draws.map(d=>d.nums.map(x=>x-1)));
+  const r=rng32(99),perm=Array.from({length:N},(_,i)=>i),SIM=300,sims=[];
+  for(let s=0;s<SIM;s++){const seq=[];
+    for(let t=0;t<T;t++){for(let j=0;j<K;j++){const k=j+Math.floor(r()*(N-j));const x=perm[k];perm[k]=perm[j];perm[j]=x;}seq.push(perm.slice(0,K));}
+    sims.push(run(seq));}
+  sims.sort((a,b)=>a-b);
+  return {n:T-START,factor:Math.exp(obs),nullFactor:Math.exp(sims[SIM>>1]),
+    nullLo:Math.exp(sims[Math.floor(SIM*0.025)]),nullHi:Math.exp(sims[Math.floor(SIM*0.975)]),
+    p:sims.filter(x=>x>=obs).length/SIM};
+}
+function pairStats(draws){
+  const T=draws.length,M=new Uint16Array(N*N);
+  const addPairs=(arr,cnt)=>{let mx=0;for(let a=0;a<K;a++)for(let b=a+1;b<K;b++){const i=arr[a]<arr[b]?arr[a]*N+arr[b]:arr[b]*N+arr[a];const v=++cnt[i];if(v>mx)mx=v;}return mx;};
+  let obsMax=0;draws.forEach(d=>{const m=addPairs(d.nums.map(n=>n-1),M);if(m>obsMax)obsMax=m;});
+  const list=[];for(let a=0;a<N;a++)for(let b=a+1;b<N;b++)list.push({a:a+1,b:b+1,c:M[a*N+b]});
+  list.sort((x,y)=>y.c-x.c||x.a-y.a||x.b-y.b);
+  const r=rng32(77),perm=Array.from({length:N},(_,i)=>i),SIM=1000;let ge=0;
+  for(let s=0;s<SIM;s++){const C=new Uint16Array(N*N);let mx=0;
+    for(let t=0;t<T;t++){for(let j=0;j<K;j++){const k=j+Math.floor(r()*(N-j));const x=perm[k];perm[k]=perm[j];perm[j]=x;}
+      const m=addPairs(perm.slice(0,K),C);if(m>mx)mx=m;}
+    if(mx>=obsMax)ge++;}
+  const E=T*K*(K-1)/(N*(N-1)),zero=list.filter(x=>x.c===0).length;
+  return {top:list.slice(0,10),E,obsMax,p:ge/SIM,zero,expZero:list.length*Math.pow(1-K*(K-1)/(N*(N-1)),T)};
+}
+if(typeof module!=='undefined')module.exports={BASE,analyze,backtest,checkTicket,parseLine,PRIZES,TOTAL,P_ANY,comboModel,comboBacktest,pairStats,weights,e6,setGame,GAMES,validDraw,mkDraw,state:()=>({N,TOTAL,PRIZES,P_ANY})};
+</script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const fmt=(x,d)=>x.toLocaleString('vi-VN',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pad=n=>String(n).padStart(2,'0');
+let added=[],remoteBy={},metaBy={};
+function loadAdded(){try{added=(JSON.parse(localStorage.getItem(G.key)||'[]')).map(l=>parseLine(l).d).filter(Boolean);}catch(e){added=[];}}
+let all=[],cur=[],A=null,CM=null,sortK='post',sortDir=-1,picked=[];
+
+function rebuild(){
+  const m=new Map();BASE.forEach(d=>m.set(d.draw,Object.assign({src:'Có sẵn'},d)));(remoteBy[G.id]||[]).forEach(d=>m.set(d.draw,d));added.forEach(d=>m.set(d.draw,Object.assign({src:'Nhập tay'},d)));
+  all=[...m.values()].sort((a,b)=>a.draw-b.draw);
+}
+function csvLine(d){return [d.date,d.draw,...d.nums.map(pad)].concat(BONUS?[pad(d.bonus)]:[]).join(',');}
+function save(){try{localStorage.setItem(G.key,JSON.stringify(added.map(csvLine)));}catch(e){}}
+function balls(d,hit){return '<div class="balls">'+d.nums.map(n=>`<span class="ball${hit&&hit.includes(n)?' hit':''}">${pad(n)}</span>`).join('')
+  +(BONUS&&d.bonus?`<span class="sub">JP2</span><span class="ball bonus">${pad(d.bonus)}</span>`:'')+'</div>';}
+function pill(ok,a,b){return `<span class="pill ${ok?'good':'warn'}">${ok?a:b}</span>`;}
+
+function compute(){
+  const v=$('period').value,lastTs=all[all.length-1].ts;
+  cur=v==='all'?all:v==='100'?all.slice(-100):all.filter(d=>d.ts>lastTs-365*864e5);
+  A=analyze(cur);
+  $('period').options[2].textContent=`Tất cả dữ liệu (${all.length} kỳ)`;
+  $('range').textContent=`${cur.length} kỳ quay, từ ${cur[0].date} (#${cur[0].draw}) đến ${cur[cur.length-1].date} (#${cur[cur.length-1].draw})`;
+  CM=comboModel(cur);renderOverview();renderNumbers();renderCombos();renderTests();renderBacktest();renderCheck();renderData();
+}
+function renderOverview(){
+  const top=[...A.rows].sort((a,b)=>b.c-a.c),ok=A.pUniform>0.05;
+  $('tiles').innerHTML=
+    `<div class="tile"><span>Số kỳ phân tích</span><b>${A.T}</b><span>mỗi số kỳ vọng ra ${fmt(A.E,1)} lần</span></div>`+
+    `<div class="tile"><span>Kiểm định ngẫu nhiên</span><b>p = ${fmt(A.pUniform,2)}</b><span>${pill(ok,'Khớp với quay ngẫu nhiên','Lệch, cần xem thêm')}</span></div>`+
+    `<div class="tile"><span>Ra nhiều nhất</span><b>${pad(top[0].n)} · ${top[0].c} lần</b><span>kỳ vọng ${fmt(A.E,1)} lần; xem tab Kiểm định</span></div>`+
+    `<div class="tile"><span>Ra ít nhất</span><b>${pad(top[top.length-1].n)} · ${top[top.length-1].c} lần</b><span>số ra ít không vì thế mà sắp ra</span></div>`;
+  const d=cur[cur.length-1];
+  $('latest').innerHTML=`<p class="sub">Kỳ #${d.draw}, ngày ${d.date}</p>`+balls(d);
+  $('odds').innerHTML='<tr><th>Giải</th><th class="l">Điều kiện</th><th>Xác suất</th><th>Tỷ lệ</th></tr>'+
+    PRIZES.map(p=>`<tr><td>${p[0]}</td><td class="l">${p[1]}</td><td class="num">1 / ${fmt(TOTAL/p[2],0)}</td><td class="num">${(p[2]/TOTAL*100).toPrecision(3).replace('.',',')}%</td></tr>`).join('')+
+    `<tr><td><b>Bất kỳ giải nào</b></td><td class="l"></td><td class="num">1 / ${fmt(1/P_ANY,1)}</td><td class="num">${(P_ANY*100).toPrecision(3).replace('.',',')}%</td></tr>`;
+}
+function ci(r){
+  if(window.jStat&&jStat.beta) return [jStat.beta.inv(0.025,r.a,r.b),jStat.beta.inv(0.975,r.a,r.b)];
+  const s=Math.sqrt(r.post*(1-r.post)/(r.a+r.b+1));return [r.post-1.96*s,r.post+1.96*s];
+}
+function renderNumbers(){
+  const W=880,H=300,L=34,B=24,Tp=10,pw=W-L-6,ph=H-B-Tp,sd=Math.sqrt(A.T*A.p0*(1-A.p0)*(N-K)/(N-1));
+  const ymax=Math.max(Math.max(...A.cnt),A.E+2*sd)*1.08||1,y=v=>Tp+ph-v/ymax*ph,bw=pw/N;
+  const step=ymax>40?10:ymax>16?5:ymax>8?2:1;let g='';
+  for(let v=0;v<=ymax;v+=step)g+=`<line x1="${L}" x2="${W-6}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+  const band=`<rect x="${L}" width="${pw}" y="${y(A.E+1.96*sd)}" height="${y(Math.max(0,A.E-1.96*sd))-y(A.E+1.96*sd)}" fill="var(--band)" opacity=".55"/>`;
+  const bars=A.cnt.map((c,i)=>`<rect x="${L+i*bw+2}" width="${bw-4}" y="${y(c)}" height="${y(0)-y(c)}" rx="2" fill="var(--accent)"><title>Số ${pad(i+1)}: ${c} lần</title></rect>`+
+    `<text x="${L+i*bw+bw/2}" y="${H-8}" text-anchor="middle" style="font-size:9px">${pad(i+1)}</text>`).join('');
+  $('chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Biểu đồ số lần xuất hiện của ${N} số">${g}${band}${bars}`+
+    `<line x1="${L}" x2="${W-6}" y1="${y(A.E)}" y2="${y(A.E)}" stroke="var(--ink)" stroke-dasharray="5 4"/></svg>`;
+  const rows=[...A.rows].sort((a,b)=>(a[sortK]-b[sortK])*sortDir||a.n-b.n),mx=Math.max(...A.cnt)||1;
+  $('numtab').innerHTML='<tr><th data-k="n">Số</th><th data-k="c">Số lần ra</th><th class="l"></th><th data-k="freq">Tần suất</th><th data-k="post">Xác suất Bayes</th><th>Khoảng tin cậy 95%</th><th data-k="gap">Số kỳ chưa ra</th></tr>'+
+    rows.map(r=>{const [lo,hi]=ci(r);return `<tr><td class="num"><b>${pad(r.n)}</b></td><td class="num">${r.c}</td><td class="l" style="width:120px"><div class="bar" style="width:${r.c/mx*100}%"></div></td>`+
+      `<td class="num">${fmt(r.freq*100,1)}%</td><td class="num">${fmt(r.post*100,1)}%</td><td class="num">${fmt(lo*100,1)} – ${fmt(hi*100,1)}%</td><td class="num">${r.gap}</td></tr>`;}).join('');
+}
+function ratio(p){return p*TOTAL;}
+function oneIn(p){return '1 / '+fmt(1/p,0);}
+function renderCombos(){
+  const best=CM.top[0],bt=comboBacktest(cur),ps=pairStats(cur),ok=bt.p>0.05;
+  $('ctiles').innerHTML=
+    `<div class="tile"><span>Bộ có xác suất cao nhất theo mô hình</span><div class="balls">${best.nums.map(n=>`<span class="ball">${pad(n)}</span>`).join('')}</div><span>${oneIn(best.p)}</span></div>`+
+    `<div class="tile"><span>So với quay ngẫu nhiên</span><b>${fmt(ratio(best.p),2)} lần</b><span>bộ thấp nhất: ${fmt(ratio(CM.low.p),2)} lần</span></div>`+
+    `<div class="tile"><span>Kiểm tra trên ${bt.n} kỳ đã quay</span><b>${fmt(bt.factor,2)} lần</b><span>${pill(!ok,'Có lợi thế','Không hơn ngẫu nhiên')}</span></div>`;
+  $('combos').innerHTML='<tr><th>Hạng</th><th class="l">Bộ số</th><th>Xác suất theo mô hình</th><th>So với ngẫu nhiên</th><th></th></tr>'+
+    CM.top.map((c,i)=>`<tr><td class="num">${i+1}</td><td class="l"><div class="balls">${c.nums.map(n=>`<span class="ball">${pad(n)}</span>`).join('')}</div></td>`+
+      `<td class="num">${oneIn(c.p)}</td><td class="num">${fmt(ratio(c.p),2)} lần</td><td><button type="button" class="ghost" data-set="${c.nums.join(',')}">Dò bộ này</button></td></tr>`).join('');
+  $('cbt').innerHTML=`<p>Với mỗi kỳ trong ${bt.n} kỳ gần nhất, mô hình được dựng chỉ từ các kỳ trước đó, rồi xem nó gán xác suất bao nhiêu cho kết quả thật. Trung bình, kết quả thật nhận <b>${fmt(bt.factor,2)} lần</b> xác suất của quay ngẫu nhiên. Nếu lịch sử giúp dự đoán, con số này phải lớn hơn 1.</p>`+
+    `<p class="sub">Vì mô hình học cả phần may rủi, nó luôn hơi dưới 1 kể cả khi máy quay hoàn toàn công bằng. Chạy cùng mô hình trên 300 bộ dữ liệu quay ngẫu nhiên giả lập cho mức thường gặp ${fmt(bt.nullFactor,2)} lần (vùng 95%: ${fmt(bt.nullLo,2)} đến ${fmt(bt.nullHi,2)}). Kết quả thật ${bt.factor>bt.nullHi?'cao hơn':bt.factor<bt.nullLo?'thấp hơn':'nằm trong'} vùng này, p = ${fmt(bt.p,2)}.</p>`+
+    `<p>${pill(!ok,'Mô hình có lợi thế dự đoán','Kết luận: chọn bộ số theo mô hình không tăng cơ hội trúng')}</p>`;
+  $('pairinfo').textContent=`Mỗi cặp số kỳ vọng ra cùng nhau ${fmt(ps.E,2)} lần trong ${cur.length} kỳ. Cặp ra nhiều nhất được ${ps.obsMax} lần; với quay ngẫu nhiên, cặp nhiều nhất đạt mức này hoặc cao hơn trong ${fmt(ps.p*100,0)}% số lần mô phỏng. Có ${ps.zero} cặp chưa từng ra cùng nhau (kỳ vọng khoảng ${fmt(ps.expZero,0)}).`;
+  $('pairs').innerHTML='<tr><th class="l">Cặp số</th><th>Số lần ra cùng nhau</th><th>Kỳ vọng</th></tr>'+
+    ps.top.map(x=>`<tr><td class="l"><div class="balls"><span class="ball">${pad(x.a)}</span><span class="ball">${pad(x.b)}</span></div></td><td class="num">${x.c}</td><td class="num">${fmt(ps.E,2)}</td></tr>`).join('');
+}
+function renderTests(){
+  $('tests').innerHTML='<tr><th>Kiểm định</th><th>Quan sát</th><th>Kỳ vọng</th><th>p</th><th class="l">Kết luận</th></tr>'+
+    A.tests.map(t=>`<tr><td>${t.name}</td><td class="num">${t.obs.replace('.',',')}</td><td class="num">${t.exp.replace('.',',')}</td><td class="num">${fmt(t.p,3)}</td><td class="l">${pill(t.p>0.05,'Khớp ngẫu nhiên','Lệch nhẹ')}</td></tr>`).join('');
+}
+function renderBacktest(){
+  const b=backtest(cur);
+  $('btinfo').textContent=`Với mỗi kỳ trong ${b.n} kỳ gần nhất, mỗi cách chọn 6 số chỉ dựa vào các kỳ trước đó. Chọn ngẫu nhiên trúng trung bình ${fmt(b.mu,3)} số mỗi kỳ; vùng dao động 95% là ${fmt(b.lo,3)} đến ${fmt(b.hi,3)}. Kỳ vọng có giải (từ 3 số) ở ${fmt(b.expWin,1)} kỳ. Khi thử ${b.rows.length} cách cùng lúc, đôi khi một cách lọt ra ngoài vùng 95% chỉ do may rủi.`;
+  $('bt').innerHTML='<tr><th>Cách chọn</th><th>Số trúng TB mỗi kỳ</th><th>Số kỳ trúng từ 3 số</th><th>Trúng nhiều nhất</th><th>z</th><th class="l">Kết luận</th></tr>'+
+    b.rows.map(r=>`<tr><td>${r.name}</td><td class="num">${fmt(r.mean,3)}</td><td class="num">${r.win}</td><td class="num">${r.max}</td><td class="num">${(r.z>0?'+':'')+fmt(r.z,2)}</td><td class="l">${Math.abs(r.z)<1.96?pill(true,'Trong vùng ngẫu nhiên'):pill(false,'',r.z>0?'Cao hơn vùng 95%':'Kém hơn ngẫu nhiên')}</td></tr>`).join('');
+}
+function renderCheck(){
+  $('picked').textContent=picked.length?`Đã chọn ${picked.length}/6: ${picked.map(pad).join(' ')}`:'';
+  [...$('grid').children].forEach(b=>{const on=picked.includes(+b.dataset.n);b.setAttribute('aria-pressed',on);b.disabled=!on&&picked.length>=K;});
+  if(picked.length<K){$('check').innerHTML='<p class="sub">Chọn đủ 6 số để xem kết quả.</p>';return;}
+  const c=checkTicket(cur,picked);
+  const dist=c.dist.map((n,m)=>`<tr><td>Trùng ${m} số</td><td class="num">${n} kỳ</td><td class="num">${fmt(n/cur.length*100,1)}%</td></tr>`).join('');
+  const wins=c.wins.length?c.wins.reverse().map(w=>`<tr><td>${w.d.date} · #${w.d.draw}</td><td class="l">${balls(w.d,picked)}</td><td>${w.prize}</td></tr>`).join(''):'';
+  $('check').innerHTML=`<p>Nếu mua bộ số này trong cả ${cur.length} kỳ, bạn có giải ở <b>${c.wins.length}</b> kỳ. Trung bình một bộ số bất kỳ có giải ở ${fmt(cur.length*P_ANY,1)} kỳ.</p>`+
+    `<p class="sub">Theo mô hình ở tab Bộ 6 số, bộ này có xác suất ${oneIn(setProb(CM.w,CM.E,picked))} (${fmt(ratio(setProb(CM.w,CM.E,picked)),2)} lần ngẫu nhiên), nhưng kiểm tra cho thấy mô hình không dự đoán được. Xác suất thật vẫn là 1 / ${fmt(TOTAL,0)}.</p>`+
+    `<div class="scroll"><table><tr><th>Mức trùng</th><th>Số kỳ</th><th>Tỷ lệ</th></tr>${dist}</table></div>`+
+    (wins?`<div class="scroll"><table><tr><th>Kỳ có giải</th><th class="l">Kết quả</th><th>Giải</th></tr>${wins}</table></div>`:'');
+}
+function renderData(){
+  $('data').innerHTML=`<tr><th>Ngày</th><th>Kỳ</th><th class="l">6 số</th>${BONUS?'<th>JP2</th>':''}<th class="l">Nguồn</th></tr>`+
+    [...all].reverse().map(d=>`<tr><td>${d.date}</td><td class="num">#${d.draw}</td><td class="l num">${d.nums.map(pad).join(' ')}</td>${BONUS?`<td class="num">${pad(d.bonus)}</td>`:''}<td class="l sub">${d.src||''}</td></tr>`).join('');
+}
+function say(t,err){$('msg').textContent=t;$('msg').className='msg'+(err?' err':'');}
+
+function applyGame(){
+  $('title').textContent='Phân tích '+G.name;
+  [...$('gameSel').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.game===G.id));
+  document.querySelectorAll('.gN').forEach(e=>e.textContent=N);
+  document.querySelectorAll('.gTotal').forEach(e=>e.textContent=fmt(TOTAL,0));
+  document.querySelectorAll('.gP0').forEach(e=>e.textContent=`6/${N} = ${fmt(K/N*100,2)}%`);
+  $('gDays').textContent=G.days;$('gFmt').textContent=G.fmt;$('gEx').textContent=G.example;$('paste').placeholder=G.example;
+  $('gSrc').href=G.src;$('gBase').textContent=`#${BASE[BASE.length-1].draw} đến #${BASE[0].draw}`;
+  $('grid').style.setProperty('--cols',N%11===0?11:9);
+  $('grid').innerHTML=Array.from({length:N},(_,i)=>`<button type="button" data-n="${i+1}" aria-pressed="false">${pad(i+1)}</button>`).join('');
+  say('');
+}
+function switchGame(id){
+  setGame(id);try{localStorage.setItem('vietlott-game',G.id);}catch(e){}
+  picked=[];loadAdded();applyGame();rebuild();compute();syncText();
+}
+$('gameSel').addEventListener('click',e=>{const id=e.target.dataset.game;if(id&&id!==G.id)switchGame(id);});
+$('grid').addEventListener('click',e=>{const n=+e.target.dataset.n;if(!n)return;
+  picked=picked.includes(n)?picked.filter(x=>x!==n):picked.length<K?picked.concat(n).sort((a,b)=>a-b):picked;renderCheck();});
+$('quick').addEventListener('click',()=>{const s=new Set();while(s.size<K)s.add(1+Math.floor(Math.random()*N));picked=[...s].sort((a,b)=>a-b);renderCheck();});
+$('clear').addEventListener('click',()=>{picked=[];renderCheck();});
+$('combos').addEventListener('click',e=>{const s=e.target.dataset.set;if(!s)return;picked=s.split(',').map(Number);renderCheck();location.hash='do-ve';});
+$('numtab').addEventListener('click',e=>{const k=e.target.dataset.k;if(!k)return;sortDir=k===sortK?-sortDir:(k==='n'?1:-1);sortK=k;renderNumbers();});
+$('period').addEventListener('change',compute);
+$('add').addEventListener('click',()=>{
+  const lines=$('paste').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){say('Dán ít nhất một dòng kết quả.',true);return;}
+  let ok=0;const errs=[];
+  lines.forEach((l,i)=>{const r=parseLine(l);if(r.err){errs.push(`Dòng ${i+1}: ${r.err}`);return;}
+    added=added.filter(d=>d.draw!==r.d.draw).concat(r.d);ok++;});
+  if(ok){save();rebuild();compute();$('paste').value='';}
+  say((ok?`Đã thêm ${ok} kỳ. `:'')+errs.join('. '),errs.length>0);
+});
+$('reset').addEventListener('click',()=>{const n=added.length;added=[];save();rebuild();compute();say(n?`Đã xóa ${n} kỳ bạn thêm.`:'Chưa có kỳ nào được thêm.');});
+$('copy').addEventListener('click',()=>{
+  const csv='date,draw,n1,n2,n3,n4,n5,n6'+(BONUS?',bonus':'')+'\n'+[...all].reverse().map(csvLine).join('\n');
+  const fb=()=>{$('paste').value=csv;$('paste').select();say('Không sao chép tự động được. Dữ liệu đã nằm trong ô phía trên, hãy chọn và sao chép.',true);};
+  try{navigator.clipboard.writeText(csv).then(()=>say(`Đã sao chép ${all.length} kỳ.`),fb);}catch(e){fb();}
+});
+const VIEWS=['tong-quan','tung-so','bo-so','kiem-dinh','chien-luoc','do-ve','du-lieu'];
+function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:VIEWS[0];
+  VIEWS.forEach(id=>$(id).classList.toggle('on',id===v));
+  [...$('nav').children].forEach(a=>a.getAttribute('href')==='#'+v?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current'));}
+window.addEventListener('hashchange',route);
+let saved='655';try{saved=localStorage.getItem('vietlott-game')||'655';}catch(e){}
+setGame(saved);loadAdded();applyGame();rebuild();compute();route();
+
+/* Tự động cập nhật: tác vụ định kỳ ghi kỳ mới vào cơ sở dữ liệu của trang (collection "draws"),
+   trang đọc và gộp vào dữ liệu có sẵn. */
+let timer=null,stale=false;
+function syncText(){
+  const latest=all[all.length-1],meta=metaBy[G.id]||null;
+  const when=meta&&meta.lastRun?new Date(meta.lastRun).toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'}):'';
+  let pill,detail;
+  if(stale){pill='<span class="pill warn">Chưa kết nối được nguồn cập nhật</span>';detail=' Đang dùng dữ liệu có sẵn.';}
+  else if(meta&&meta.result==='error'){pill='<span class="pill warn">Lần tải gần nhất bị lỗi</span>';detail=` ${when}. ${meta.message||''}`;}
+  else if(meta){pill='<span class="pill good">Tự động cập nhật</span>';detail=` Kiểm tra lần cuối ${when}.`;}
+  else{pill='<span class="pill good">Tự động cập nhật</span>';detail=' Chưa có lần tải nào; tác vụ chạy sau mỗi kỳ quay.';}
+  $('sync').innerHTML=`${pill} Kỳ mới nhất #${latest.draw} (${latest.date}).${detail}`;
+}
+function toDraw(s){
+  const o=s.data();if(!o||!Array.isArray(o.nums))return null;
+  if(!/^\d{2}-\d{2}-\d{4}$/.test(String(o.date)))return null;
+  const d=mkDraw(Number(o.draw),String(o.date),o.nums.map(Number),BONUS?Number(o.bonus):undefined);
+  if(validDraw(d))return null;
+  d.src='Tự động';return d;
+}
+(async()=>{
+  let db=null;
+  try{db=window.claude&&await window.claude.use('db');}catch(e){db=null;}
+  if(!db){stale=true;syncText();return;}
+  timer=setTimeout(()=>{stale=true;syncText();},10000);
+  const done=()=>{if(timer){clearTimeout(timer);timer=null;}stale=false;};
+  Object.values(GAMES).forEach(g=>{
+    db.collection(g.coll).onSnapshot(snap=>{
+      if(!snap.metadata.fromCache)done();
+      const keep=G;setGame(g.id);remoteBy[g.id]=snap.docs.map(toDraw).filter(Boolean);setGame(keep.id);
+      if(g.id===G.id){rebuild();compute();}syncText();
+    },()=>{done();stale=true;syncText();});
+    db.doc(g.meta).onSnapshot(s=>{
+      if(!s.metadata.fromCache)done();
+      metaBy[g.id]=s.exists?s.data():null;syncText();
+    },()=>{});
+  });
+})();
+syncText();
+})();
+</script>
+</body>
+</html>
