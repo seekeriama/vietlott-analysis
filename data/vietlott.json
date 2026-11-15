@@ -34,14 +34,16 @@
  ],
  "meta": {
   "655": {
-   "lastRun": "2026-11-15T12:49:09Z",
+   "lastRun": "2026-11-15T16:56:25Z",
    "result": "ok",
-   "message": "Dữ liệu khởi tạo"
+   "lastDraw": 1424,
+   "message": "Chưa có kỳ mới"
   },
   "645": {
-   "lastRun": "2026-11-15T12:49:09Z",
+   "lastRun": "2026-11-15T16:56:25Z",
    "result": "ok",
-   "message": "Dữ liệu khởi tạo"
+   "lastDraw": 1589,
+   "message": "Chưa có kỳ mới"
   }
  }
 }
