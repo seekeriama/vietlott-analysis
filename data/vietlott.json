@@ -45,20 +45,34 @@
     44
    ],
    "source": "xskt.com.vn"
+  },
+  {
+   "draw": 1590,
+   "date": "18-11-2026",
+   "nums": [
+    6,
+    18,
+    20,
+    27,
+    29,
+    32
+   ],
+   "source": "xskt.com.vn",
+   "fetchedAt": "2026-11-18T20:47:18Z"
   }
  ],
  "meta": {
   "655": {
-   "lastRun": "2026-11-17T22:29:48Z",
+   "lastRun": "2026-11-18T20:47:18Z",
    "result": "ok",
    "lastDraw": 1425,
    "message": "Chưa có kỳ mới"
   },
   "645": {
-   "lastRun": "2026-11-17T22:29:48Z",
+   "lastRun": "2026-11-18T20:47:18Z",
    "result": "ok",
-   "lastDraw": 1589,
-   "message": "Chưa có kỳ mới"
+   "lastDraw": 1590,
+   "message": "Đã thêm kỳ #1590"
   }
  }
 }
