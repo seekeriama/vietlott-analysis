@@ -74,20 +74,34 @@
    ],
    "source": "xskt.com.vn",
    "fetchedAt": "2026-11-18T20:47:18Z"
+  },
+  {
+   "draw": 1591,
+   "date": "20-11-2026",
+   "nums": [
+    2,
+    10,
+    12,
+    28,
+    30,
+    32
+   ],
+   "source": "xskt.com.vn",
+   "fetchedAt": "2026-11-20T20:38:06Z"
   }
  ],
  "meta": {
   "655": {
-   "lastRun": "2026-11-19T22:19:35Z",
+   "lastRun": "2026-11-20T20:38:06Z",
    "result": "ok",
    "lastDraw": 1426,
    "message": "Chưa có kỳ mới"
   },
   "645": {
-   "lastRun": "2026-11-19T22:19:35Z",
+   "lastRun": "2026-11-20T20:38:06Z",
    "result": "ok",
-   "lastDraw": 1590,
-   "message": "Chưa có kỳ mới"
+   "lastDraw": 1591,
+   "message": "Đã thêm kỳ #1591"
   }
  }
 }
