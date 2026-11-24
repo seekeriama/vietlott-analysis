@@ -59,6 +59,21 @@
    "source": "xskt.com.vn",
    "fetchedAt": "2026-11-21T19:37:26Z",
    "bonus": 39
+  },
+  {
+   "draw": 1428,
+   "date": "24-11-2026",
+   "nums": [
+    36,
+    40,
+    43,
+    46,
+    50,
+    55
+   ],
+   "source": "xskt.com.vn",
+   "fetchedAt": "2026-11-24T22:39:43Z",
+   "bonus": 15
   }
  ],
  "645": [
@@ -121,13 +136,13 @@
  ],
  "meta": {
   "655": {
-   "lastRun": "2026-11-24T01:45:02Z",
+   "lastRun": "2026-11-24T22:39:43Z",
    "result": "ok",
-   "lastDraw": 1427,
-   "message": "Chưa có kỳ mới"
+   "lastDraw": 1428,
+   "message": "Đã thêm kỳ #1428"
   },
   "645": {
-   "lastRun": "2026-11-24T01:45:02Z",
+   "lastRun": "2026-11-24T22:39:43Z",
    "result": "ok",
    "lastDraw": 1592,
    "message": "Chưa có kỳ mới"
